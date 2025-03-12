@@ -2,15 +2,19 @@
   <PropertyGroup>
     <Description>Job console for Hangfire</Description>
     <AssemblyTitle>Hangfire.Console</AssemblyTitle>
-    <VersionPrefix>1.4.3</VersionPrefix>
-    <Authors>Alexey Skalozub</Authors>
-    <TargetFrameworks>netstandard1.3;net45</TargetFrameworks>
+    <VersionPrefix>1.4.4</VersionPrefix>
+    <Authors>Alexey Skalozub, Akinox</Authors>
+    <TargetFrameworks>netstandard2.1</TargetFrameworks>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AssemblyName>Hangfire.Console</AssemblyName>
     <PackageId>Hangfire.Console</PackageId>
     <PackageTags>hangfire;console;logging</PackageTags>
     <PackageReleaseNotes>History:
+      v1.4.4:
+      • .NetS Standard 8.0
+      • Upgraded dependencies
+
       v1.4.3:
       • Fix culture-related issues
       • Add configurable number of decimal digits for progress bars
@@ -119,8 +123,8 @@
     <EmbeddedResource Include="Resources\*" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Hangfire.Core" Version="1.6.0" />
-    <PackageReference Include="JetBrains.Annotations" Version="11.0.0" PrivateAssets="All" />
+    <PackageReference Include="Hangfire.Core" Version="1.8.18" />
+    <PackageReference Include="JetBrains.Annotations" Version="2024.3.0" PrivateAssets="All" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
     <Reference Include="System" />
