@@ -4,6 +4,7 @@ using Hangfire.Console.Storage;
 using Hangfire.States;
 using Hangfire.Storage;
 using Moq;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -36,12 +37,12 @@ namespace Hangfire.Console.Tests.Storage
         {
             Assert.Throws<ArgumentNullException>("connection", () => new ConsoleStorage(null));
         }
-        
+
         [Fact]
         public void Ctor_ThrowsException_IfNotImplementsJobStorageConnection()
         {
             var dummyConnection = new Mock<IStorageConnection>();
-            
+
             Assert.Throws<NotSupportedException>(() => new ConsoleStorage(dummyConnection.Object));
         }
 
@@ -62,14 +63,14 @@ namespace Hangfire.Console.Tests.Storage
 
             Assert.Throws<ArgumentNullException>("consoleId", () => storage.InitConsole(null));
         }
-        
+
         [Fact]
         public void InitConsole_ThrowsException_IfNotImplementsJobStorageTransaction()
         {
             var dummyTransaction = new Mock<IWriteOnlyTransaction>();
             _connection.Setup(x => x.CreateWriteTransaction())
                 .Returns(dummyTransaction.Object);
-            
+
             var storage = new ConsoleStorage(_connection.Object);
 
             Assert.Throws<NotSupportedException>(() => storage.InitConsole(_consoleId));
@@ -148,7 +149,7 @@ namespace Hangfire.Console.Tests.Storage
             _transaction.Verify(x => x.Commit(), Times.Once);
         }
 
-        
+
         [Fact]
         public void AddLine_ProgressBarIsAddedToSet_AndProgressIsUpdated()
         {
@@ -167,7 +168,7 @@ namespace Hangfire.Console.Tests.Storage
             _transaction.Verify(x => x.SetRangeInHash(_consoleId.GetHashKey(), It2.AnyIs<KVP>(p => p.Key == "progress")));
             _transaction.Verify(x => x.Commit(), Times.Once);
         }
-        
+
         [Fact]
         public void Expire_ThrowsException_IfConsoleIdIsNull()
         {
@@ -188,12 +189,12 @@ namespace Hangfire.Console.Tests.Storage
             _transaction.Verify(x => x.ExpireHash(_consoleId.GetHashKey(), It.IsAny<TimeSpan>()));
             _transaction.Verify(x => x.Commit(), Times.Once);
         }
-            
+
         [Fact]
         public void Expire_ExpiresOldSetAndHashKeysEither_ForBackwardsCompatibility()
         {
             var storage = new ConsoleStorage(_connection.Object);
-        
+
             storage.Expire(_consoleId, TimeSpan.FromHours(1));
 
             _connection.Verify(x => x.CreateWriteTransaction(), Times.Once);
@@ -276,7 +277,7 @@ namespace Hangfire.Console.Tests.Storage
             };
 
             _connection.Setup(x => x.GetRangeFromSet(_consoleId.GetSetKey(), It.IsAny<int>(), It.IsAny<int>()))
-                .Returns((string key, int start, int end) => lines.Where((x, i) => i >= start && i <= end).Select(JobHelper.ToJson).ToList());
+                .Returns((string key, int start, int end) => lines.Where((x, i) => i >= start && i <= end).Select(x => SerializationHelper.Serialize(x, SerializationOption.User)).ToList());
 
             var storage = new ConsoleStorage(_connection.Object);
 
@@ -296,7 +297,7 @@ namespace Hangfire.Console.Tests.Storage
             };
 
             _connection.Setup(x => x.GetRangeFromSet(_consoleId.GetOldConsoleKey(), It.IsAny<int>(), It.IsAny<int>()))
-                .Returns((string key, int start, int end) => lines.Where((x, i) => i >= start && i <= end).Select(JobHelper.ToJson).ToList());
+                .Returns((string key, int start, int end) => lines.Where((x, i) => i >= start && i <= end).Select(x => SerializationHelper.Serialize(x, SerializationOption.User)).ToList());
 
             var storage = new ConsoleStorage(_connection.Object);
 
@@ -313,7 +314,7 @@ namespace Hangfire.Console.Tests.Storage
             };
 
             _connection.Setup(x => x.GetRangeFromSet(_consoleId.GetSetKey(), It.IsAny<int>(), It.IsAny<int>()))
-                .Returns((string key, int start, int end) => lines.Where((x, i) => i >= start && i <= end).Select(JobHelper.ToJson).ToList());
+                .Returns((string key, int start, int end) => lines.Where((x, i) => i >= start && i <= end).Select(x => SerializationHelper.Serialize(x, SerializationOption.User)).ToList());
             _connection.Setup(x => x.GetValueFromHash(_consoleId.GetHashKey(), It.IsAny<string>()))
                 .Returns("Dereferenced Line");
 
@@ -333,7 +334,7 @@ namespace Hangfire.Console.Tests.Storage
             };
 
             _connection.Setup(x => x.GetRangeFromSet(_consoleId.GetOldConsoleKey(), It.IsAny<int>(), It.IsAny<int>()))
-                .Returns((string key, int start, int end) => lines.Where((x, i) => i >= start && i <= end).Select(JobHelper.ToJson).ToList());
+                .Returns((string key, int start, int end) => lines.Where((x, i) => i >= start && i <= end).Select(x => SerializationHelper.Serialize(x, SerializationOption.User)).ToList());
             _connection.Setup(x => x.GetValueFromHash(_consoleId.GetOldConsoleKey(), It.IsAny<string>()))
                 .Returns("Dereferenced Line");
 
@@ -353,7 +354,7 @@ namespace Hangfire.Console.Tests.Storage
             };
 
             _connection.Setup(x => x.GetRangeFromSet(_consoleId.GetOldConsoleKey(), It.IsAny<int>(), It.IsAny<int>()))
-                .Returns((string key, int start, int end) => lines.Where((x, i) => i >= start && i <= end).Select(JobHelper.ToJson).ToList());
+                .Returns((string key, int start, int end) => lines.Where((x, i) => i >= start && i <= end).Select(x => SerializationHelper.Serialize(x, SerializationOption.User)).ToList());
 
             _connection.Setup(x => x.GetValueFromHash(_consoleId.GetOldConsoleKey(), It.IsAny<string>()))
                 .Throws(new NotSupportedException());
@@ -392,7 +393,7 @@ namespace Hangfire.Console.Tests.Storage
 
             Assert.Same(state, result);
         }
-        
+
         [Fact]
         public void GetProgress_ThrowsException_IfConsoleIdIsNull()
         {
@@ -410,7 +411,7 @@ namespace Hangfire.Console.Tests.Storage
 
             Assert.Null(result);
         }
-        
+
         [Fact]
         public void GetProgress_ReturnsNull_IfValueIsInvalid()
         {
@@ -423,7 +424,7 @@ namespace Hangfire.Console.Tests.Storage
 
             Assert.Null(result);
         }
-        
+
         [Fact]
         public void GetProgress_ReturnsProgressValue()
         {

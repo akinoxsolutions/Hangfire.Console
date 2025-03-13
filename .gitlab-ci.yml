@@ -1,0 +1,19 @@
+default:
+  tags: [docker]
+  image: mcr.microsoft.com/dotnet/sdk:8.0
+
+build:
+  stage: build
+  script:
+    - 'pwd'
+    - 'dotnet restore'
+    - 'dotnet pack'
+
+deploy:
+  stage: deploy
+  script:
+    - dotnet pack -c Release src/Hangfire.Console --version-suffix=$(date +%y%m%d%H%M)
+    - dotnet nuget add source "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/nuget/index.json" --name gitlab --username gitlab-ci-token --password $CI_JOB_TOKEN --store-password-in-clear-text
+    - dotnet nuget push "src/Hangfire.Console/bin/Release/*.nupkg" --source gitlab
+  only:
+    - main
